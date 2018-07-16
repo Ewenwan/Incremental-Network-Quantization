@@ -57,7 +57,11 @@
 # Incremental-Network-Quantization
 Caffe Implementation for Incremental network quantization, we modify the original caffe, the Installation is follow [caffe](http://caffe.berkeleyvision.org/install_apt.html).
 
-the default source code is 5 bits weights-only quantization, you can by changing parameter "partition"(/src/caffe/blob.cpp) to control the quantization step. 
+the default source code is 5 bits weights-only quantization,
+
+量化位数精度修改
+
+you can by changing parameter "partition"(/src/caffe/blob.cpp) to control the quantization step. 
 
 # INQ usage
 

@@ -579,13 +579,14 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
     int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
 
     for (int i = 0; i < (count_); ++i) {
-    
       if(std::abs(data_vec[i]) >= data_copy[partition])// 优先量化 绝对值较大的 权重参数==========
         {
           data_vec[i] = weightCluster_zero(data_vec[i],n1);// 进行量化，在 until/power2.cpp中实现
           mask_vec[i]=0;// 置位 已经量化的标志=======================
         }
     }
+   // 代码其实有点小问题，data_copy malloc 使用完之后 没有 free释放
+   // free data_copy
   }
 /////////////////////////////////////===============
 

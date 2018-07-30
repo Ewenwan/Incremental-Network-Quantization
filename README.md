@@ -64,17 +64,20 @@ the default source code is 5 bits weights-only quantization,
 you can by changing parameter "partition"(/src/caffe/blob.cpp) to control the quantization step. 
 
 # INQ usage
-
-0.you must be farmilar with caffe training [imagenet tutorial](http://caffe.berkeleyvision.org/gathered/examples/imagenet.html)
-
-1.Train 5 bits Alexnet with Imagenet:
-
-	python run.py
-
-Please download float-point ImageNet-pre-trained AlexNet/VGG models and power-of-two model manually from [BaiduYun](https://pan.baidu.com/s/1qYHkbus), and put it into $/models/bvlc_alexnet/.
+	0. 编译
+	   依赖fft  sudo apt-get install libfftw3-dev libfftw3-doc 
 
 
-2.At continuous partition steps, the output logs are saved as run1_log.out, run2_log.out, run3_log.out,..., respectively
+	0.you must be farmilar with caffe training [imagenet tutorial](http://caffe.berkeleyvision.org/gathered/examples/imagenet.html)
+
+	1. 默认为5bits的量化精度 Train 5 bits Alexnet with Imagenet:
+
+		python run.py
+
+	Please download float-point ImageNet-pre-trained AlexNet/VGG models and power-of-two model manually from [BaiduYun](https://pan.baidu.com/s/1qYHkbus), and put it into $/models/bvlc_alexnet/.
+
+
+	2.At continuous partition steps, the output logs are saved as run1_log.out, run2_log.out, run3_log.out,..., respectively
 
 ### Citing INQ
 
@@ -121,3 +124,62 @@ The authors adopted the proposed method to several model, including AlexNet, VGG
       method would be efficient with binary shift operation in hardware, 
       the computation in there experiments is still using floating operations.
       Thus they only show the results of model compression instead of speeding up computation.
+# 训练量化 run.py
+
+```python
+#-*- coding: utf-8 -*-
+
+# 分组多次量化
+
+import os
+
+# 对第一组量化=========================
+print "First partition and run"
+
+os.system("nohup sh ./examples/INQ/alexnet/train_alexnet.sh >run1_log.out 2>&1")
+
+# 对第二组量化=========================
+print "Second partition and run"
+
+# 修改源文件 编译
+os.system("sed -i \"s/(count_\*0.7)/(count_\*0.4)/g\" ./src/caffe/blob.cpp")
+os.system("make all -j128")
+
+# 进行训练量化
+os.system("sed -i \"s/original.caffemodel/alexnet_part1_iter_63000.caffemodel/g\" ./examples/INQ/alexnet/train_alexnet.sh")
+os.system("sed -i \"s/part1/part2/g\" ./examples/INQ/alexnet/solver.prototxt")
+os.system("nohup sh ./examples/INQ/alexnet/train_alexnet.sh >run2_log.out 2>&1")
+
+
+# 对第三组量化=========================
+print "Thrid partition and run"
+# 修改源文件 编译
+os.system("sed -i \"s/(count_\*0.4)/(count_\*0.2)/g\" ./src/caffe/blob.cpp")
+os.system("make all -j128")
+
+# 进行训练量化
+os.system("sed -i \"s/alexnet_part1_iter_63000.caffemodel/alexnet_part2_iter_63000.caffemodel/g\" ./examples/INQ/alexnet/train_alexnet.sh")
+os.system("sed -i \"s/part2/part3/g\" ./examples/INQ/alexnet/solver.prototxt")
+os.system("nohup sh ./examples/INQ/alexnet/train_alexnet.sh >run3_log.out 2>&1")
+
+# 最后一组量化==========================
+print "Last partition and run"
+
+os.system("sed -i \"s/(count_\*0.2)/(count_\*0.)/g\" ./src/caffe/blob.cpp")
+os.system("make all -j128")
+
+os.system("sed -i \"s/alexnet_part2_iter_63000.caffemodel/alexnet_part3_iter_63000.caffemodel/g\" ./examples/INQ/alexnet/train_alexnet.sh")
+os.system("sed -i \"s/part3/part4/g\" ./examples/INQ/alexnet/solver.prototxt")
+os.system("sed -i \"s/snapshot: 3000/snapshot: 1/g\" ./examples/INQ/alexnet/solver.prototxt")
+os.system("sed -i \"s/max_iter: 63000/max_iter: 1/g\" ./examples/INQ/alexnet/solver.prototxt")
+os.system("nohup sh ./examples/INQ/alexnet/train_alexnet.sh >run4_log.out 2>&1")
+
+# 2乘方权重============================
+print "All quantization done and you can enjoy the power-of-two weights using check.py!"
+
+```
+# 验证 check.py
+```python
+
+
+```

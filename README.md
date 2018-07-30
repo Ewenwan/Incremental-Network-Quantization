@@ -65,7 +65,9 @@ Caffe Implementation for Incremental network quantization, we modify the origina
  ## Tips:
  1. Real-time data shuffling is useful
  ## Experimental Results
- The authors adopted the proposed method to several model, including AlexNet, VGG-16, GoogleNet, ResNet-18 and ResNet-50. More experiments for exploration was conducted on ResNet-18. Experimental results on ImageNet using center crop validation are shown as follows.
+
+The authors adopted the proposed method to several model, including AlexNet, VGG-16, GoogleNet, ResNet-18 and ResNet-50. More experiments for exploration was conducted on ResNet-18. Experimental results on ImageNet using center crop validation are shown as follows.
+
 | Network       | Bit-width | Top-1/Top-5 Error | Decrease in Top-1/Top-5 Error | Portion                   |
 | ------------- | :-------- | ----------------- | ----------------------------- | ------------------------- |
 | AlexNet ref   | 32        | 42.71%/19.77%     |                               |                           |
@@ -78,13 +80,15 @@ Caffe Implementation for Incremental network quantization, we modify the origina
 | ResNet        | 5         | **31.02%/10.90%** | 0.71%/0.41                    | {0.5, 0.75, 0.875, 1.0}   |
 | ResNet-50 ref | 32        | 26.78%/8.76%      |                               |                           |
 | ResNet-50     | 5         | **25.19%/7.55%**  | 1.59%/1.21%                   | {0.5, 0.75, 0.875, 1.0}   |
-       Number of required epochs for training increasing with the expected bit-width going down.
+
+      Number of required epochs for training increasing with the expected bit-width going down.
       The accumulated portions for weight quantization are set as {0.3, 0.5, 0.8, 0.9, 0.95, 1.0}, 
       {0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0}, {0.2, 0.4, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.975,  1.0} 
       for 4-bits to 2-bits, respectively. Training epochs required for 2-bits finally 
       set to 30 which means that 300 training epochs are required for completing a full quantization procedure.
       In the other words, the proposed method become time-consuming when the network going deeper.
-       Although the authors convert weights to the powers of 2 and claim that their 
+
+      Although the authors convert weights to the powers of 2 and claim that their 
       method would be efficient with binary shift operation in hardware, 
       the computation in there experiments is still using floating operations.
       Thus they only show the results of model compression instead of speeding up computation.

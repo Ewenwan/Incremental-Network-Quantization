@@ -68,7 +68,7 @@ Caffe Implementation for Incremental network quantization, we modify the origina
 
 The authors adopted the proposed method to several model, including AlexNet, VGG-16, GoogleNet, ResNet-18 and ResNet-50. More experiments for exploration was conducted on ResNet-18. Experimental results on ImageNet using center crop validation are shown as follows.
 
-| Network       | Bit-width | Top-1/Top-5 Error | Decrease in Top-1/Top-5 Error | Portion                   |
+| Network       | Bit-width | Top-1/Top-5 Error | Decrease in Top-1/Top-5 Error | Partition                 |
 | ------------- | :-------- | ----------------- | ----------------------------- | ------------------------- |
 | AlexNet ref   | 32        | 42.71%/19.77%     |                               |                           |
 | AlexNet       | 5         | **42.61%/19.54%** | 0.15%/0.23%                   | {0.3, 0.6, 0.8, 1.0}      |

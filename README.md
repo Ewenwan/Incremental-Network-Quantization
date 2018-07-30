@@ -254,7 +254,13 @@ void SGDSolver<Dtype>::ComputeUpdateValue(int param_id, Dtype rate) {
         history_[param_id]->mutable_gpu_data(),
         momentum, local_rate);
     // 使用 量化mask 对 diff 进行滤波， 已经量化后的参数不再进行更新========
+    // diff = mask * diff;
     caffe_gpu_mul(net_params[param_id]->count(),net_params[param_id]->gpu_mask(),net_params[param_id]->mutable_gpu_diff(),net_params[param_id]->mutable_gpu_diff());
+    
+// 在re-training中，我们只对未量化的那些参数进行更新。
+// 待更新的参数，mask中的值都是1，这样和diff相乘仍然不变；
+// 不更新的参数，mask中的值都是0，和diff乘起来，相当于强制把梯度变成了0。
+    
 #else
     NO_GPU;
 #endif

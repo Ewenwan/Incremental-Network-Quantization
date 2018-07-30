@@ -150,7 +150,7 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
 
 
 # 代码主要部分 
-## blob.cpp
+## blob.cpp  量化策略
 ```cpp
 // Blob<Dtype>::FromProto()  // 510行前后
   // INQ  
@@ -170,7 +170,7 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
     
     //quantizate the top 30% of each layer, change the "partition" until partition=0
 	// 量化的分割点 
-	// 前 (1-0.7) (1-0.4) (1-0.2)
+	// 第一次 (1-0.7)  第二次(1-0.4)  第三次(1-0.2) 最后一次(1-0)
     int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
 
     for (int i = 0; i < (count_); ++i) {
@@ -183,13 +183,48 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
           mask_vec[i]=0;// 置位 已经量化的标志=======================
         }
     }
-	
+   // 代码其实有点小问题，data_copy malloc 使用完之后 没有 free释放
+   // free data_copy;	
   }
 ```
 
-## until/power2.cpp
+## until/power2.cpp  具体量化方法
 ```cpp
-
+// 量化 权重值----->  pow(2,i)=========
+// weight 量化为  +pow(2,ni) / -pow(2,ni) , ni: n1-7:n1, 选择量化误差最小的一个
+  template <typename Dtype>
+  double weightCluster_zero( Dtype weight, int M)
+  {
+    double min=100;
+    double ind=0;
+    double flag=1.0;
+	
+	// 最小值
+    if(min > std::abs(weight))
+    {
+      min = std::abs(weight);
+      flag=0.0;// 权重绝对值未超过100
+    }
+          
+    for(int i=(M-7); i<=M; i++)// 从最高比特位 M=n1 到 n1-7 进行遍历
+      {
+		  
+        if(min > std::abs(weight - pow(2,i)))//    weight 量化为  +pow(2,i) 的  量化差值
+          {
+            min = std::abs(weight - pow(2,i));//     最小量化差值
+            ind=i;
+            flag=1.0;// weight 量化为  +pow(2,i)
+          }
+		  
+        if(min > std::abs(weight + pow(2,i)))//   weight 量化为  -pow(2,i) 的 量化差值
+          {
+            min = std::abs(weight + pow(2,i));//    最小量化差值
+            ind = i;
+            flag = -1.0;
+          }
+      }
+      return flag*pow(2,ind);
+  }
 ```
 
 

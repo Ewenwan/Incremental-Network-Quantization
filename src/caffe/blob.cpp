@@ -5,6 +5,9 @@
 #include "caffe/common.hpp"
 #include "caffe/syncedmem.hpp"
 #include "caffe/util/math_functions.hpp"
+
+
+////////////////// 新添加头文件 ///////
 #include "caffe/util/power2.hpp"
 #include <cmath>
 #include <algorithm>
@@ -12,44 +15,59 @@
 namespace caffe {
 
 template <typename Dtype>
-void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
-    const int width) {
-  vector<int> shape(4);
-  shape[0] = num;
-  shape[1] = channels;
-  shape[2] = height;
-  shape[3] = width;
+void Blob<Dtype>::Reshape(
+	const int num, 
+	const int channels, 
+	const int height,
+	const int width) 
+{
+  vector<int> shape(4);// 4维度
+  shape[0] = num;      // patch 批次图片数量
+  shape[1] = channels; // 通道数量
+  shape[2] = height;   // 特征图高度
+  shape[3] = width;    // 特征图宽度
   Reshape(shape);
 }
 
 template <typename Dtype>
-void Blob<Dtype>::Reshape(const vector<int>& shape) {
+void Blob<Dtype>::Reshape(const vector<int>& shape) 
+{
   CHECK_LE(shape.size(), kMaxBlobAxes);
   count_ = 1;
   shape_.resize(shape.size());
-  if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) {
+  if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) 
+  {
     shape_data_.reset(new SyncedMemory(shape.size() * sizeof(int)));
   }
+  // 数据blob维度信息 shape_data_
   int* shape_data = static_cast<int*>(shape_data_->mutable_cpu_data());
-  for (int i = 0; i < shape.size(); ++i) {
+  for (int i = 0; i < shape.size(); ++i) 
+  {
     CHECK_GE(shape[i], 0);
-    if (count_ != 0) {
+    if (count_ != 0) 
+	{
       CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
     }
-    count_ *= shape[i];
+    count_ *= shape[i];// count_总数量计数(内存所需存储 Dtype数据 个数)
     shape_[i] = shape[i];
     shape_data[i] = shape[i];
   }
-  if (count_ > capacity_) {
+  
+  // 扩大内存，进行存储
+  if (count_ > capacity_) 
+  {
     capacity_ = count_;
-    data_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
-    diff_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
-    mask_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
+    data_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));// 数据
+    diff_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));// 数据的梯度
+	
+//////////////////////  新添加 梯度更新标志/已经量化标志 mask =====================================
+    mask_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));// 梯度更新标志/已经量化标志 mask 
   }
 }
 
 template <typename Dtype>
-void Blob<Dtype>::Reshape(const BlobShape& shape) {
+void Blob<Dtype>::Reshape(const BlobShape& shape) 
+{
   CHECK_LE(shape.dim_size(), kMaxBlobAxes);
   vector<int> shape_vec(shape.dim_size());
   for (int i = 0; i < shape.dim_size(); ++i) {
@@ -58,16 +76,22 @@ void Blob<Dtype>::Reshape(const BlobShape& shape) {
   Reshape(shape_vec);
 }
 
+// 便形成和另一个维度一致
 template <typename Dtype>
 void Blob<Dtype>::ReshapeLike(const Blob<Dtype>& other) {
   Reshape(other.shape());
 }
 
+// 初始化一个数据 blob
 template <typename Dtype>
-Blob<Dtype>::Blob(const int num, const int channels, const int height,
-    const int width)
+Blob<Dtype>::Blob(
+	const int num,       // patch 批次图片数量
+	const int channels,  // 通道数量 
+	const int height,    // 特征图高度
+	const int width)     // 特征图宽度
   // capacity_ must be initialized before calling Reshape
-  : capacity_(0) {
+  : capacity_(0) // 初始容量为0
+{
   Reshape(num, channels, height, width);
 }
 
@@ -90,6 +114,7 @@ const Dtype* Blob<Dtype>::cpu_data() const {
   return (const Dtype*)data_->cpu_data();
 }
 
+// 设置数据
 template <typename Dtype>
 void Blob<Dtype>::set_cpu_data(Dtype* data) {
   CHECK(data);
@@ -101,7 +126,7 @@ const Dtype* Blob<Dtype>::gpu_data() const {
   CHECK(data_);
   return (const Dtype*)data_->gpu_data();
 }
-
+// 数据梯度信息
 template <typename Dtype>
 const Dtype* Blob<Dtype>::cpu_diff() const {
   CHECK(diff_);
@@ -114,7 +139,8 @@ const Dtype* Blob<Dtype>::gpu_diff() const {
   return (const Dtype*)diff_->gpu_data();
 }
 
-//add start
+// 面罩mask_ 新添加 梯度更新标志/已经量化标志 mask===============================
+// add start
 template <typename Dtype>
 const Dtype* Blob<Dtype>::cpu_mask() const{
 
@@ -138,9 +164,9 @@ Dtype* Blob<Dtype>::mutable_gpu_mask() {
   CHECK(mask_);
   return static_cast<Dtype*>(mask_->mutable_gpu_data());
 }
-//add end
+//add end==================================================================
 
-
+// 数据 data_ =======
 template <typename Dtype>
 Dtype* Blob<Dtype>::mutable_cpu_data() {
   CHECK(data_);
@@ -152,7 +178,7 @@ Dtype* Blob<Dtype>::mutable_gpu_data() {
   CHECK(data_);
   return static_cast<Dtype*>(data_->mutable_gpu_data());
 }
-
+// 梯度 diff_ =========
 template <typename Dtype>
 Dtype* Blob<Dtype>::mutable_cpu_diff() {
   CHECK(diff_);
@@ -165,12 +191,14 @@ Dtype* Blob<Dtype>::mutable_gpu_diff() {
   return static_cast<Dtype*>(diff_->mutable_gpu_data());
 }
 
+// 共享数据
 template <typename Dtype>
 void Blob<Dtype>::ShareData(const Blob& other) {
   CHECK_EQ(count_, other.count());
   data_ = other.data();
 }
 
+// 共享数据梯度 
 template <typename Dtype>
 void Blob<Dtype>::ShareDiff(const Blob& other) {
   CHECK_EQ(count_, other.count());
@@ -220,7 +248,8 @@ template <> int Blob<int>::asum_data() const {
 }
 
 template <typename Dtype>
-Dtype Blob<Dtype>::asum_data() const {
+Dtype Blob<Dtype>::asum_data() const 
+{
   if (!data_) { return 0; }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
@@ -290,7 +319,8 @@ template <> int Blob<int>::sumsq_data() const {
 }
 
 template <typename Dtype>
-Dtype Blob<Dtype>::sumsq_data() const {
+Dtype Blob<Dtype>::sumsq_data() const 
+{
   Dtype sumsq;
   const Dtype* data;
   if (!data_) { return 0; }
@@ -365,7 +395,8 @@ template <typename Dtype>
 void Blob<Dtype>::scale_data(Dtype scale_factor) {
   Dtype* data;
   if (!data_) { return; }
-  switch (data_->head()) {
+  switch (data_->head())
+  {
   case SyncedMemory::HEAD_AT_CPU:
     data = mutable_cpu_data();
     caffe_scal(count_, scale_factor, data);
@@ -395,7 +426,8 @@ template <> void Blob<int>::scale_diff(int scale_factor) {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::scale_diff(Dtype scale_factor) {
+void Blob<Dtype>::scale_diff(Dtype scale_factor) 
+{
   Dtype* diff;
   if (!diff_) { return; }
   switch (diff_->head()) {
@@ -443,7 +475,8 @@ bool Blob<Dtype>::ShapeEquals(const BlobProto& other) {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
+void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) 
+{
   if (source.count() != count_ || source.shape() != shape_) {
     if (reshape) {
       ReshapeLike(source);
@@ -475,6 +508,7 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
   }
 }
 
+//==========================================================================
 // Add mask and quantizate float into power-of-two
 template <typename Dtype>
 void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quantization) {
@@ -501,47 +535,60 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
   }
   // copy data
   Dtype* data_vec = mutable_cpu_data();
+  
+  // copy mask //////////////////////======================
   Dtype* mask_vec= mutable_cpu_mask();
-  if (proto.double_data_size() > 0) {
+  
+  if (proto.double_data_size() > 0) 
+  {
     CHECK_EQ(count_, proto.double_data_size());
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = proto.double_data(i);
-      mask_vec[i]=1;
+	  
+/////////////////////////////////////======================
+      mask_vec[i]=1;// 预先设置为未量化
     }
-  } else {
+  } 
+  else 
+  {
     CHECK_EQ(count_, proto.data_size());
     for (int i = 0; i < count_; ++i) {
       data_vec[i] = proto.data(i);
       mask_vec[i]=1;
     }
   }
-  
+/////////////////////////////================================
   // INQ  
   if(is_quantization)
   {
-    Dtype* data_copy=(Dtype*) malloc(count_*sizeof(Dtype));
-    caffe_copy(count_,data_vec,data_copy);
-    caffe_abs(count_,data_copy,data_copy);
-    std::sort(data_copy,data_copy+count_); //data_copy order from small to large
-    
-    //caculate the n1
-    Dtype max_data=data_copy[count_-1];
-    int n1=(int)floor(log2(max_data*4.0/3.0));
+	  
+    Dtype* data_copy=(Dtype*) malloc(count_*sizeof(Dtype));// 新申请blob一样大小的内存
+	
+    caffe_copy(count_,data_vec,data_copy); // 拷贝数据       x
+    caffe_abs(count_,data_copy,data_copy); // 绝对值处理     abs(x)
+    std::sort(data_copy,data_copy+count_); // 排序处理(升序)       data_copy order from small to large
+	
+// 计算上限 n1 
+    //caculate the n1 上限  : W -> {±2^(n1), ... ,±2^(n2), 0}
+    Dtype max_data = data_copy[count_-1];// 升序后最后一个数为最大值 为 s = max(abs(x))
+    int n1=(int)floor(log2(max_data*4.0/3.0));// n1 = floor(log2(4*s/3))
     
     //quantizate the top 30% of each layer, change the "partition" until partition=0
-    int partition=int(count_*0.7)-1;
+	// 量化的分割点 
+	// 前 (1-0.7) (1-0.4) (1-0.2)
+    int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
 
     for (int i = 0; i < (count_); ++i) {
     
-      if(std::abs(data_vec[i])>=data_copy[partition])
+      if(std::abs(data_vec[i]) >= data_copy[partition])// 优先量化 绝对值较大的 权重参数==========
         {
           data_vec[i] = weightCluster_zero(data_vec[i],n1);
-	  
-          mask_vec[i]=0;
+          mask_vec[i]=0;// 置位 已经量化的标志=======================
         }
     }
   }
-  
+/////////////////////////////////////===============
+
   if (proto.double_diff_size() > 0) {
     CHECK_EQ(count_, proto.double_diff_size());
     Dtype* diff_vec = mutable_cpu_diff();
@@ -577,6 +624,7 @@ void Blob<double>::ToProto(BlobProto* proto, bool write_diff) const {
   }
 }
 
+// 写数据
 template <>
 void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();
@@ -598,8 +646,7 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
 }
 
 INSTANTIATE_CLASS(Blob);
-template class Blob<int>;
+template class Blob<int>;// 
 template class Blob<unsigned int>;
 
 }  // namespace caffe
-

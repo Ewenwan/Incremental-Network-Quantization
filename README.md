@@ -152,9 +152,12 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
 # 代码主要部分 
 ## blob.cpp  量化策略
 ```cpp
-// Blob<Dtype>::FromProto()  // 510行前后
+// Blob<Dtype>::FromProto()  // 510行前后  
+// net.cpp 中 载入权重函数 CopyTrainedLayersFrom() 会调用 Blob<Dtype>::FromProto()
+// 传入标记值(是否量化的标志, is_quantization 可对w、b进行量化，未考虑BN层参数)
   // INQ  
-  if(is_quantization)
+  if(is_quantization)// 根据标志位，对部分进行量化以及不量化
+  // 如 权重w量化 而 bias不量化
   {
 	  
     Dtype* data_copy=(Dtype*) malloc(count_*sizeof(Dtype));// 新申请blob一样大小的内存
@@ -226,6 +229,68 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
       return flag*pow(2,ind);
   }
 ```
+
+## net.cpp 载入网络参数时，进行量化
+```cpp
+/// 从 模型文件中载入 网络权重
+// 调用blob.cpp 中 FromProto() 载入每一个卷积核
+// 传入标记值(是否量化的标志)
+template <typename Dtype>
+void Net<Dtype>::CopyTrainedLayersFrom(const NetParameter& param) {
+	// 总层数量
+  int num_source_layers = param.layer_size();
+  
+  for (int i = 0; i < num_source_layers; ++i) // 遍历每一层
+  {
+    const LayerParameter& source_layer = param.layer(i);
+    const string& source_layer_name = source_layer.name();// 层名字 .name()
+    int target_layer_id = 0;
+    while (target_layer_id != layer_names_.size() &&
+        layer_names_[target_layer_id] != source_layer_name) 
+    {
+      ++target_layer_id;
+    }
+    if (target_layer_id == layer_names_.size()) 
+    {
+      LOG(INFO) << "Ignoring source layer " << source_layer_name;
+      continue;
+    }
+    DLOG(INFO) << "Copying source layer " << source_layer_name;
+    vector<shared_ptr<Blob<Dtype> > >& target_blobs =
+        layers_[target_layer_id]->blobs();
+    CHECK_EQ(target_blobs.size(), source_layer.blobs_size())
+        << "Incompatible number of blobs for layer " << source_layer_name;
+    for (int j = 0; j < target_blobs.size(); ++j) 
+    {
+      bool is_quantization=false;
+      //  only quantize the weights and skip the bias
+      //  if your network contains batch normalization, you can skip it by "source_layer_name"
+      if(j==0)// 权重w 部分==================
+	      is_quantization=true;
+      else// 偏置bias 部分
+	      is_quantization=false;
+		  
+ // 检查 prototxt文件定义的网络尺寸 和 给定的 预训练 权重weight 的各层参数 维度适量是否一致
+      if (!target_blobs[j]->ShapeEquals(source_layer.blobs(j))) 
+	  {// 不一致，打印 权重weight .caffemodel参数数量
+        Blob<Dtype> source_blob;
+        const bool kReshape = true;
+		// blob.cpp 的读取blob参数 添加了支持 载入并量化的部分 is_quantization
+        source_blob.FromProto(source_layer.blobs(j), kReshape,is_quantization);
+        LOG(FATAL) << "Cannot copy param " << j << " weights from layer '"
+            << source_layer_name << "'; shape mismatch.  Source param shape is "
+            << source_blob.shape_string() << "; target param shape is "
+            << target_blobs[j]->shape_string() << ". "
+            << "To learn this layer's parameters from scratch rather than "
+            << "copying from a saved net, rename the layer.";
+      }
+      const bool kReshape = false;
+      target_blobs[j]->FromProto(source_layer.blobs(j), kReshape,is_quantization);
+    }
+  }
+}
+```
+
 ## 训练 更新参数值
 
 ```cpp

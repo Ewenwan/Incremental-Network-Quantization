@@ -149,3 +149,48 @@ print "All quantization done and you can enjoy the power-of-two weights using ch
 ```
 
 
+# 代码主要部分 
+## blob.cpp
+```cpp
+// Blob<Dtype>::FromProto()  // 510行前后
+  // INQ  
+  if(is_quantization)
+  {
+	  
+    Dtype* data_copy=(Dtype*) malloc(count_*sizeof(Dtype));// 新申请blob一样大小的内存
+	
+    caffe_copy(count_,data_vec,data_copy); // 拷贝数据       x
+    caffe_abs(count_,data_copy,data_copy); // 绝对值处理     abs(x)
+    std::sort(data_copy,data_copy+count_); // 排序处理(升序)       data_copy order from small to large
+	
+// 计算上限 n1 
+    //caculate the n1 上限  : W -> {±2^(n1), ... ,±2^(n2), 0}
+    Dtype max_data = data_copy[count_-1];// 升序后最后一个数为最大值 为 s = max(abs(x))
+    int n1=(int)floor(log2(max_data*4.0/3.0));// n1 = floor(log2(4*s/3))
+    
+    //quantizate the top 30% of each layer, change the "partition" until partition=0
+	// 量化的分割点 
+	// 前 (1-0.7) (1-0.4) (1-0.2)
+    int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
+
+    for (int i = 0; i < (count_); ++i) {
+    
+      if(std::abs(data_vec[i]) >= data_copy[partition])// 优先量化 绝对值较大的 权重参数==========
+        {
+          data_vec[i] = weightCluster_zero(data_vec[i],n1);// 进行量化，在 until/power2.cpp中实现
+		  //  data_vec[i] 量化为  +pow(2,ni) / -pow(2,ni) ， ni: n1-7:n1, 选择量化误差最小的一个
+		  // 权重值----->  pow(2,i)
+          mask_vec[i]=0;// 置位 已经量化的标志=======================
+        }
+    }
+	
+  }
+```
+
+## until/power2.cpp
+```cpp
+
+```
+
+
+

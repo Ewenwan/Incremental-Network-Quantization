@@ -582,7 +582,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
     
       if(std::abs(data_vec[i]) >= data_copy[partition])// 优先量化 绝对值较大的 权重参数==========
         {
-          data_vec[i] = weightCluster_zero(data_vec[i],n1);
+          data_vec[i] = weightCluster_zero(data_vec[i],n1);// 进行量化，在 until/power2.cpp中实现
           mask_vec[i]=0;// 置位 已经量化的标志=======================
         }
     }

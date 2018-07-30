@@ -586,7 +586,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
         }
     }
    // 代码其实有点小问题，data_copy malloc 使用完之后 没有 free释放
-   // free data_copy
+   // free data_copy;
   }
 /////////////////////////////////////===============
 

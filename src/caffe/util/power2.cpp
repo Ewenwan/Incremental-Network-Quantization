@@ -20,7 +20,19 @@ namespace caffe
       min = std::abs(weight);
       flag=0.0;// 权重绝对值未超过100
     }
-          
+	  
+// the number 7 (default, n2的值 ) is corresponding to 5 bits in paper,
+//  you can modify it, 3 for 4 bits, 1 for 3 bits, 0 for 2 bits.
+// n2 = n1 + 1 −2^(b−1)/2. 
+// For instance, if b = 3(量化精度) and n1 = −1, it is easy to get n2 = −2, 
+// if b=5, n1 = −1， n2= -1 + 1-(2^(5-1))/2 = -8
+// 0 for 2 bits
+// 1 for 3 bits
+// 3 for 4 bits
+// 7 for 5 bits
+// 15 for 6 bits
+// 31 for 7 bits     2^b - 1
+// 63 for 8 bits    
     for(int i=(M-7); i<=M; i++)
       {
 		  
@@ -52,7 +64,19 @@ namespace caffe
       min=std::abs(weight);
       flag=0.0;
     }
-          
+	 
+// the number 7 (default, n2的值 ) is corresponding to 5 bits in paper,
+//  you can modify it, 3 for 4 bits, 1 for 3 bits, 0 for 2 bits.
+// n2 = n1 + 1 −2^(b−1)/2. 
+// For instance, if b = 3(量化精度) and n1 = −1, it is easy to get n2 = −2, 
+// if b=5, n1 = −1， n2= -1 + 1-(2^(5-1))/2 = -8
+// 0 for 2 bits
+// 1 for 3 bits
+// 3 for 4 bits
+// 7 for 5 bits
+// 15 for 6 bits
+// 31 for 7 bits     2^b - 1
+// 63 for 8 bits
     for(int i=(M-7); i<=M; i++)// 从最高比特位 M=n1 进行遍历
       {
         if(min > std::abs(weight - pow(2,i)))

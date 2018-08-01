@@ -576,7 +576,14 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
     //quantizate the top 30% of each layer, change the "partition" until partition=0
 	// 量化的分割点 
 	// 前 (1-0.7) (1-0.4) (1-0.2)
-    int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
+// part1  0.7  前30%
+     int partition=int(count_*0.7)-1;
+// part2  0.4  前60%
+    // int partition=int(count_*0.4 )-1;
+// part3  0.2  前80%
+    // int partition=int(count_*0.2)-1;
+// part4  0.0  前100%
+    //int partition=int(count_*0.0 )-1;
 
     for (int i = 0; i < (count_); ++i) {
       if(std::abs(data_vec[i]) >= data_copy[partition])// 优先量化 绝对值较大的 权重参数==========
@@ -586,7 +593,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape, bool is_quanti
         }
     }
    // 代码其实有点小问题，data_copy malloc 使用完之后 没有 free释放
-   // free data_copy;
+    free(data_copy);
   }
 /////////////////////////////////////===============
 

@@ -1,4 +1,5 @@
 name: "AlexNet"
+# train data ============================
 layer {
   name: "data"
   type: "Data"
@@ -10,14 +11,16 @@ layer {
   transform_param {
     mirror: true
     crop_size: 227
-    mean_file: "/Path/ILSVRC12_mean.binaryproto"
+    mean_file: "./data/imagenet_mean.binaryproto"
   }
   data_param {
-   source: "/Path/imagenet_train_leveldb/"
+    source: "./data/ilsvrc_cls/ilsvrc12_train_lmdb"
     batch_size: 256
-    backend: LEVELDB
+    backend: LMDB
   }
 }
+
+# val data =================================
 layer {
   name: "data"
   type: "Data"
@@ -29,14 +32,19 @@ layer {
   transform_param {
     mirror: false
     crop_size: 227
-    mean_file: "Path/ILSVRC12_mean.binaryproto"
+    mean_file: "./data/imagenet_mean.binaryproto"
+#    mean_value: 104
+#    mean_value: 117
+#    mean_value: 123
   }
   data_param {
-    source: "/Path/imagenet_val_leveldb/"
+    source: "./data/ilsvrc_cls/ilsvrc12_val_lmdb"
     batch_size: 50
-    backend: LEVELDB
+    backend: LMDB
   }
 }
+
+# net begin=====================================
 layer {
   name: "conv1"
   type: "Convolution"
@@ -370,6 +378,8 @@ layer {
     }
   }
 }
+
+# top1 评估层============
 layer {
   name: "accuracy@1"
   type: "Accuracy"
@@ -383,6 +393,8 @@ accuracy_param{
    top_k:1
  }
 }
+
+# top5 评估层=============
 layer {
   name: "accuracy@5"
   type:"Accuracy"
@@ -396,6 +408,8 @@ layer {
     top_k:5
   }
 }
+
+# loss层=============
 layer {
   name: "loss"
   type: "SoftmaxWithLoss"

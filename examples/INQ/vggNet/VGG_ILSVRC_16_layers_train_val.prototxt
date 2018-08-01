@@ -381,7 +381,9 @@ layer {
 #  bottom: "fc8"
 #  top: "prob"
 #}
+
 #========Train=========
+# loss ============================
 layer {
   name: "loss"
   type: "SoftmaxWithLoss"
@@ -392,6 +394,8 @@ layer {
     phase: TRAIN
   }
 }
+
+# 评估 top1========================
 layer {
   name: "accuracy"
   type: "Accuracy"
@@ -402,6 +406,8 @@ layer {
     phase: TEST
   }
 }
+
+# 评估 top5============================
 layer {
   name: "accuracy_top5"
   type: "Accuracy"

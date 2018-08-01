@@ -1,0 +1,37 @@
+net: "./models/ResNet/ResNet-152-train-val-remove-bn.prototxt"
+test_iter: 1000
+test_interval: 3000
+base_lr: 0.003
+lr_policy: "step"
+gamma: 0.2
+stepsize: 15000
+display: 40
+
+
+# part1 2 3
+max_iter: 63000
+# part4
+# max_iter: 1
+
+
+momentum: 0.9
+weight_decay: 0.0005
+
+# part1 2 3
+snapshot: 3000
+# part4
+# snapshot: 1
+
+
+# part1
+ snapshot_prefix: "./models/ResNet/iNQ-model/models/resnet152_part1"
+# part2
+# snapshot_prefix: "./models/ResNet/iNQ-model/models/resnet152_part2"
+# part3
+#snapshot_prefix: "./models/ResNet/iNQ-model/models/resnet152_part3"
+# part4
+#snapshot_prefix: "./models/ResNet/iNQ-model/models/resnet152_part4"
+# part5
+#snapshot_prefix: "./models/ResNet/iNQ-model/models/resnet152_part5"
+
+solver_mode: GPU

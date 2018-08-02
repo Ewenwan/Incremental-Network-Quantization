@@ -1,3 +1,7 @@
+# part0 : blob.CPP  int partition=int(count_*1.0)-1; 
+# 无量化  基线准确度 
+WEIGHT=./models/VggNet/VGG_ILSVRC_16_layers.caffemodel
+
 # part1 : blob.CPP  int partition=int(count_*0.7)-1;// 每次量化的比例 分界点
 # 量化 前30%
 WEIGHT=./models/VggNet/VGG_ILSVRC_16_layers.caffemodel

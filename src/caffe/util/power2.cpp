@@ -3,6 +3,8 @@
 #include "caffe/common.hpp"
 #include <math.h>
 
+int bits = 8;
+
 namespace caffe
 {
 // 量化 权重值----->  pow(2,i)=========
@@ -32,8 +34,10 @@ namespace caffe
 // 7 for 5 bits
 // 15 for 6 bits
 // 31 for 7 bits     2^b - 1
-// 63 for 8 bits    
-    for(int i=(M-7); i<=M; i++)
+// 63 for 8 bits  
+	  
+    int bias = pow(2, bits-2) - 1;// n2 = n1 - 2^(b-2)+1
+    for(int i=(M-bias);i<=M;i++)
       {
 		  
         if(min > std::abs(weight - pow(2,i)))//    weight 量化为  +pow(2,i) 的  量化差值
@@ -77,7 +81,9 @@ namespace caffe
 // 15 for 6 bits
 // 31 for 7 bits     2^b - 1
 // 63 for 8 bits
-    for(int i=(M-7); i<=M; i++)// 从最高比特位 M=n1 进行遍历
+	 
+    int bias = pow(2, bits-2) - 1;// n2 = n1 - 2^(b-2)+1
+    for(int i=(M-bias);i<=M;i++)  // 从最高比特位 M=n1 进行遍历
       {
         if(min > std::abs(weight - pow(2,i)))
           {
